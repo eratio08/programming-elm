@@ -1,9 +1,9 @@
 module Picshare exposing (main)
 
 import Browser
-import Html exposing (Html, div, h1, h2, i, img, li, strong, text, ul)
-import Html.Attributes exposing (class, placeholder, src, type_)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, form, h1, h2, i, img, input, li, strong, text, ul)
+import Html.Attributes exposing (class, disabled, placeholder, src, type_, value)
+import Html.Events exposing (onClick, onInput, onSubmit)
 
 
 main : Program () Model Msg
@@ -27,6 +27,7 @@ viewDetailedPhoto model =
         , div [ class "photo-info" ]
             [ viewLoveButton model
             , h2 [ class "caption" ] [ text model.caption ]
+            , viewComments model
             ]
         ]
 
@@ -71,12 +72,32 @@ viewCommentList comments =
                 ]
 
 
+viewComments : Model -> Html Msg
+viewComments model =
+    div
+        []
+        [ viewCommentList model.comments
+        , form [ class "new-comment", onSubmit SaveComment ]
+            [ input
+                [ type_ "text"
+                , placeholder "Add a comment..."
+                , value model.newComment
+                , onInput UpdateComment
+                ]
+                []
+            , button
+                [ disabled (String.isEmpty model.newComment) ]
+                [ text "Save" ]
+            ]
+        ]
+
+
 initialModel : Model
 initialModel =
     { url = baseUrl ++ "1.jpg"
     , caption = "Surfing"
     , liked = False
-    , comments = [ "Cowabunga, dude!" ]
+    , comments = [ "Cowabunga, dude!", "More comments!" ]
     , newComment = ""
     }
 
@@ -97,6 +118,8 @@ view model =
 
 type Msg
     = ToggleLike
+    | UpdateComment String
+    | SaveComment
 
 
 update : Msg -> Model -> Model
@@ -104,6 +127,26 @@ update msg model =
     case msg of
         ToggleLike ->
             { model | liked = not model.liked }
+
+        UpdateComment comment ->
+            { model | newComment = comment }
+
+        SaveComment ->
+            saveNewComment model
+
+
+saveNewComment : Model -> Model
+saveNewComment model =
+    let
+        comment =
+            String.trim model.newComment
+    in
+    case comment of
+        "" ->
+            model
+
+        _ ->
+            { model | comments = model.comments ++ [ comment ], newComment = "" }
 
 
 type alias Model =
